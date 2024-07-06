@@ -36,6 +36,11 @@ import androidx.appcompat.app.AlertDialog;
 import androidx.fragment.app.DialogFragment;
 import androidx.lifecycle.ViewModelProvider;
 
+import com.kddi.media.MediaPlayerInterface;
+
+import java.io.File;
+import java.util.List;
+
 import io.reactivex.Single;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.CompositeDisposable;
@@ -67,7 +72,6 @@ public class InstallerDialog extends DialogFragment {
 	private final ActivityResultLauncher<String> openFileLauncher = registerForActivityResult(
 			FileUtils.getFilePicker(),
 			this::onPickFileResult);
-
 	/**
 	 * @param uri original uri from intent.
 	 * @return A new instance of fragment InstallerDialog.
@@ -89,6 +93,7 @@ public class InstallerDialog extends DialogFragment {
 		fragment.setCancelable(false);
 		return fragment;
 	}
+
 
 	@Override
 	public void onAttach(@NonNull Context context) {
@@ -265,6 +270,7 @@ public class InstallerDialog extends DialogFragment {
 			});
 			btnClose.setText(R.string.close);
 			showButtons();
+
 			return;
 		}
 		Descriptor nd = installer.getNewDescriptor();
