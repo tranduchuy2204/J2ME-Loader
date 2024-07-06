@@ -19,7 +19,6 @@ package ru.playsoftware.j2meloader.settings;
 import android.content.ActivityNotFoundException;
 import android.content.Context;
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
@@ -40,7 +39,6 @@ import ru.playsoftware.j2meloader.util.FileUtils;
 import ru.playsoftware.j2meloader.util.PickDirResultContract;
 
 import static ru.playsoftware.j2meloader.util.Constants.PREF_EMULATOR_DIR;
-import static ru.playsoftware.j2meloader.util.Constants.PREF_LAST_PATH;
 import static ru.playsoftware.j2meloader.util.Constants.PREF_STR;
 
 public class SettingsFragment extends PreferenceFragmentCompat {

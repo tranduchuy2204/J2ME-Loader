@@ -17,13 +17,11 @@
 
 package ru.playsoftware.j2meloader.util;
 
-import android.content.ContentResolver;
 import android.content.Context;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Environment;
 import android.util.Log;
-import android.webkit.MimeTypeMap;
 
 import androidx.activity.result.contract.ActivityResultContract;
 import androidx.core.content.FileProvider;

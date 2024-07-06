@@ -76,11 +76,13 @@ public class Config {
 		SharedPreferences preferences = context.getSharedPreferences(PREF_STR,Context.MODE_PRIVATE);
 
 		//注释掉该行，可以读取自定义路径
+		//comment the line code , will read custom path.
 //		String path = FileUtils.isExternalStorageLegacy() ?
 //				preferences.getString(PREF_EMULATOR_DIR, null) :
 //				context.getExternalFilesDir(null).getPath();
 
 		//加上该行代码，可以读取自己设置的路径，而不是自动配置路径
+		//add the code line , will read custom path , and not auto path.
 		String path = preferences.getString(PREF_EMULATOR_DIR, context.getExternalFilesDir(null).getPath());
 		if (path == null) {
 			path = Environment.getExternalStorageDirectory() + "/" + appName;

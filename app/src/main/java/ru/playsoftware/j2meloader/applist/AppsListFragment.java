@@ -41,7 +41,6 @@ import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
 import android.os.Message;
-import android.text.SpannableStringBuilder;
 import android.util.Log;
 import android.view.ContextMenu;
 import android.view.LayoutInflater;
@@ -72,22 +71,18 @@ import androidx.core.widget.TextViewCompat;
 import androidx.fragment.app.FragmentActivity;
 import androidx.fragment.app.ListFragment;
 import androidx.lifecycle.ViewModelProvider;
-import androidx.preference.PreferenceManager;
 
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import io.reactivex.Observable;
 import io.reactivex.ObservableOnSubscribe;
-import io.reactivex.Single;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.Disposable;
-import io.reactivex.schedulers.Schedulers;
 import ru.playsoftware.j2meloader.R;
 import ru.playsoftware.j2meloader.appsdb.AppRepository;
 import ru.playsoftware.j2meloader.config.Config;
@@ -105,7 +100,6 @@ import ru.playsoftware.j2meloader.util.FileUtils;
 import ru.playsoftware.j2meloader.util.LogUtils;
 import ru.woesss.j2me.installer.AppInstaller;
 import ru.woesss.j2me.installer.InstallerDialog;
-import ru.woesss.j2me.jar.Descriptor;
 
 public class AppsListFragment extends ListFragment {
     private static final String TAG = AppsListFragment.class.getSimpleName();
@@ -246,6 +240,7 @@ public class AppsListFragment extends ListFragment {
                 public void handleMessage(@NonNull Message msg) {
                     if (msg.what == 0) {
                         // 设置进度条
+                        //set progress bar
                         mProgressBar.setProgress((int) msg.obj);
                     }
 
@@ -284,6 +279,7 @@ public class AppsListFragment extends ListFragment {
 
     /**
      * 通过反射 阻止关闭对话框
+     * set stop close dialog
      */
     public void preventDismissDialog(AlertDialog ddd) {
         try {
@@ -298,6 +294,7 @@ public class AppsListFragment extends ListFragment {
 
     /**
      * 关闭对话框
+     * set force close dialog
      */
     public void permittedDismissDialog(AlertDialog ddd) {
         try {

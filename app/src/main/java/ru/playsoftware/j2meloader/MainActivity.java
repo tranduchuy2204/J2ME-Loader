@@ -38,7 +38,6 @@ import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AlertDialog;
 import androidx.core.app.ActivityCompat;
 import androidx.lifecycle.ViewModelProvider;
-import androidx.preference.PreferenceManager;
 
 import com.nononsenseapps.filepicker.Utils;
 
@@ -83,6 +82,7 @@ public class MainActivity extends BaseActivity {
 		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
 			this.requestPermissions(STORAGE_PERMISSIONS,0);
 		}
+		//request storage permission  Android 4.x~14
 		// 通过api判断手机当前版本号
 		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
 			// 安卓11，判断有没有“所有文件访问权限”权限
@@ -94,7 +94,7 @@ public class MainActivity extends BaseActivity {
 		} else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
 			// 安卓6 判断有没有读写权限权限
 			if (checkSelfPermission(context, Manifest.permission.READ_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED && checkSelfPermission(context, Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED) {
-				Toast.makeText(context, "已获取文件访问权限", Toast.LENGTH_SHORT).show();
+				Toast.makeText(context, "is request READ_EXTERNAL_STORAGE permission", Toast.LENGTH_SHORT).show();
 			}else{
 				Intent intent = new Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION);
 				intent.setData(Uri.parse("package:" + context.getPackageName()));
