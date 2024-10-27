@@ -29,10 +29,29 @@ android {
         }
     }
 
+    signingConfigs {
+        release {
+            if (System.getenv()['BITRISE_IO']) {
+                keyAlias System.getenv('BITRISEIO_ANDROID_KEYSTORE_ALIAS')
+                keyPassword System.getenv('BITRISEIO_ANDROID_KEYSTORE_PRIVATE_KEY_PASSWORD')
+                storeFile rootProject.file(System.getenv('BITRISEIO_ANDROID_KEYSTORE_NAME'))
+                storePassword System.getenv('BITRISEIO_ANDROID_KEYSTORE_PASSWORD')
+            } else {
+                Properties keystoreProps = new Properties()
+                keystoreProps.load(new FileInputStream(rootProject.file("keystore.properties")))
+                keyAlias keystoreProps['keyAlias']
+                keyPassword keystoreProps['keyPassword']
+                storeFile file(keystoreProps['storeFile'])
+                storePassword keystoreProps['storePassword']
+            }
+        }
+    }
+
     buildTypes {
         release {
             minifyEnabled true
             shrinkResources true
+            signingConfig signingConfigs.release
         }
         debug {
             applicationIdSuffix '.debug'
@@ -163,9 +182,6 @@ dependencies {
     implementation 'com.android.volley:volley:1.2.1'
     implementation 'com.google.code.gson:gson:2.9.0'
     implementation 'com.google.guava:guava:31.0.1-android'
-    //noinspection GradleDependency
-    implementation 'com.github.nikita36078:donations:2.8'
-    playImplementation 'com.github.nikita36078:donations:2.9'
 
     // Threads, Streams and Archives
     implementation 'io.reactivex.rxjava2:rxandroid:2.1.1'
