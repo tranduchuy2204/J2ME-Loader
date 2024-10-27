@@ -54,13 +54,13 @@ import ru.woesss.j2me.jar.Descriptor;
 
 public class AppInstaller {
 	private static final String TAG = AppInstaller.class.getSimpleName();
-	public static final int STATUS_OLDEST = -1;
-	public static final int STATUS_EQUAL = 0;
-	public static final int STATUS_NEWEST = 1;
-	public static final int STATUS_NEW = 2;
-	public static final int STATUS_UNMATCHED = 3;
-	public static final int STATUS_NEED_JAD = 4;
-	public static final int STATUS_SUCCESS = 5;
+	static final int STATUS_OLDEST = -1;
+	static final int STATUS_EQUAL = 0;
+	static final int STATUS_NEWEST = 1;
+	static final int STATUS_NEW = 2;
+	static final int STATUS_UNMATCHED = 3;
+	static final int STATUS_NEED_JAD = 4;
+	static final int STATUS_SUCCESS = 5;
 
 	private final int id;
 	private final Application context;
@@ -103,7 +103,7 @@ public class AppInstaller {
 		this.cacheDir = new File(context.getCacheDir(), "installer");
 	}
 
-	public Descriptor getNewDescriptor() {
+	Descriptor getNewDescriptor() {
 		return newDesc;
 	}
 
@@ -111,7 +111,7 @@ public class AppInstaller {
 		return currentApp.getVersion();
 	}
 
-	public Descriptor getManifest() {
+	Descriptor getManifest() {
 		return manifest;
 	}
 
@@ -126,19 +126,13 @@ public class AppInstaller {
 			emitter.onSuccess(STATUS_EQUAL);
 			return;
 		}
-		boolean isLocal = false;
-		boolean isContentUri = false;
-		if(uri != null){
-			isContentUri = uri.getScheme().equals("content");
-			if ("http".equals(uri.getScheme()) || "https".equals(uri.getScheme())) {
-				downloadJad();
-				isLocal = false;
-			} else {
-				srcFile = FileUtils.getFileForUri(context, uri);
-				isLocal = true;
-			}
-		}else{
-			srcFile = new File(localJarFilePath);
+		boolean isLocal;
+		boolean isContentUri = uri.getScheme().equals("content");
+		if ("http".equals(uri.getScheme()) || "https".equals(uri.getScheme())) {
+			downloadJad();
+			isLocal = false;
+		} else {
+			srcFile = FileUtils.getFileForUri(context, uri);
 			isLocal = true;
 		}
 
@@ -263,7 +257,6 @@ public class AppInstaller {
 		}catch (Exception e){
 			e.printStackTrace();
 		}
-
 	}
 
 	Single<Integer> updateInfo(Uri jarUri) {

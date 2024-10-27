@@ -18,6 +18,7 @@
 package ru.playsoftware.j2meloader;
 
 import android.Manifest;
+import android.app.Activity;
 import android.content.Context;
 import android.content.ContextWrapper;
 import android.content.Intent;
@@ -67,6 +68,9 @@ public class MainActivity extends BaseActivity {
 			new PickDirResultContract(),
 			this::onPickDirResult);
 
+	public static Context context;
+	public static Activity activity;
+
 	private SharedPreferences preferences;
 	private AppListModel appListModel;
 
@@ -74,7 +78,8 @@ public class MainActivity extends BaseActivity {
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_main);
-		Context context = this;
+		context = this;
+		activity = this;
 
 		if (FileUtils.isExternalStorageLegacy()) {
 			permissionsLauncher.launch(STORAGE_PERMISSIONS);
