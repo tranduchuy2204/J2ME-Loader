@@ -1,0 +1,37 @@
+{
+  "version": 3,
+  "artifactType": {
+    "type": "APK",
+    "kind": "Directory"
+  },
+  "applicationId": "ru.playsoftware.j2meloader",
+  "variantName": "openRelease",
+  "elements": [
+    {
+      "type": "SINGLE",
+      "filters": [],
+      "attributes": [],
+      "versionCode": 101,
+      "versionName": "1.8.2-open",
+      "outputFile": "J2ME_Loader-1.8.2-open-release.apk"
+    }
+  ],
+  "elementType": "File",
+  "baselineProfiles": [
+    {
+      "minApi": 28,
+      "maxApi": 30,
+      "baselineProfiles": [
+        "baselineProfiles/1/J2ME_Loader-1.8.2-open-release.dm"
+      ]
+    },
+    {
+      "minApi": 31,
+      "maxApi": 2147483647,
+      "baselineProfiles": [
+        "baselineProfiles/0/J2ME_Loader-1.8.2-open-release.dm"
+      ]
+    }
+  ],
+  "minSdkVersionForDexing": 14
+}
