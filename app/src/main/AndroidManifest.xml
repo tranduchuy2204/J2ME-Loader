@@ -137,7 +137,6 @@
                 <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
         </activity>
-        <activity android:name=".donations.DonationsActivity" android:exported="false" />
         <activity android:name=".settings.KeyMapperActivity" android:exported="false" />
         <activity
             android:name=".filepicker.FilteredFilePickerActivity"
@@ -159,6 +158,7 @@
         <provider
             android:name=".storage.DocumentProvider"
             android:authorities="${applicationId}.documentProvider"
+            android:enabled="@bool/isAtLeastQ"
             android:exported="true"
             android:grantUriPermissions="true"
             android:permission="android.permission.MANAGE_DOCUMENTS">
