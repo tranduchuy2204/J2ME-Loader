@@ -6,11 +6,13 @@ Base on [J2ME-Loader](https://github.com/nikita36078/J2ME-Loader)
 
 - V1.8.2
 
-1.Synchronize the latest J2ME source code.
+1.Fix the problem of missing tail times when installing with one click.
 
-2.Fix the problem that the number of installs is always missing one.
+2.Add a pop-up window after the one-click installation is completed to inform the user of the progress.
 
-3.Add a pop-up window after the batch installation is completed, you need to re-enter the program to run the jar program normally.
+3.Synchronize and merge the latest J2MELoader source code.
+
+4.Fixed the problem that the remote repository exploded.
 
 
 - V1.8.0
@@ -23,6 +25,6 @@ Base on [J2ME-Loader](https://github.com/nikita36078/J2ME-Loader)
 
 
 ## License
-> Copyright 2017-2024 Nikita Shakarun.
+> Copyright 2017-2023 Nikita Shakarun.
 > Licensed under the [Apache License, Version 2.0.](http://www.apache.org/licenses/LICENSE-2.0)  
 > (See the [LICENSE](https://github.com/nikita36078/J2ME-Loader/blob/master/LICENSE) file for the whole license text.)

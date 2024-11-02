@@ -72,14 +72,15 @@ public class AppInstaller {
 	private Descriptor newDesc;
 	private String appDirName;
 	private File targetDir;
-	public File srcJar;
+	private File srcJar;
 	private File tmpDir;
 	private AppItem currentApp;
 	private File srcFile;
 
+
 	private String localJarFilePath;
 
-	public AppInstaller(String path, Uri uri, Application context, AppRepository appRepository) {
+	AppInstaller(String path, Uri uri, Application context, AppRepository appRepository) {
 		id = -1;
 		this.appRepository = appRepository;
 		if (path != null) srcFile = new File(path);
@@ -87,6 +88,7 @@ public class AppInstaller {
 		this.context = context;
 		this.cacheDir = new File(context.getCacheDir(), "installer");
 	}
+
 
 	public AppInstaller(String filepath, Application context, AppRepository appRepository) {
 		id = -1;
@@ -116,7 +118,7 @@ public class AppInstaller {
 	}
 
 	/** Load and check app info from source */
-	public void loadInfo(SingleEmitter<Integer> emitter) throws IOException, ConverterException {
+	void loadInfo(SingleEmitter<Integer> emitter) throws IOException, ConverterException {
 		if (id != -1) {
 			currentApp = appRepository.get(id);
 			srcJar = new File(currentApp.getPathExt(), Config.MIDLET_RES_FILE);
@@ -166,97 +168,6 @@ public class AppInstaller {
 		}
 		int result = checkDescriptor();
 		emitter.onSuccess(result);
-	}
-
-	public void installJar(){
-		try {
-			srcJar = new File(localJarFilePath);
-			newDesc = loadManifest(srcJar);
-
-			if (!cacheDir.exists() && !cacheDir.mkdirs()) {
-				throw new ConverterException("Can't create cache dir");
-			}
-			targetDir = new File(Config.getAppDir(), newDesc.getName());
-			tmpDir = new File(targetDir.getParent(), ".tmp");
-			if(!tmpDir.exists()){
-				tmpDir.mkdirs();
-			}
-			if (!tmpDir.isDirectory() && !tmpDir.mkdirs())
-				throw new ConverterException("Can't create directory: '" + targetDir + "'");
-			if (srcJar == null) {
-				srcJar = new File(cacheDir, "tmp.jar");
-				downloadJar();
-				manifest = loadManifest(srcJar);
-				if (!manifest.equals(newDesc)) {
-					System.out.println("manifest error ....");
-					return;
-				}
-			}
-			try {
-				Main.main(new String[]{"--no-optimize", "--core-library",
-						"--output=" + tmpDir + Config.MIDLET_DEX_FILE,
-						srcJar.getAbsolutePath()});
-			} catch (Throwable e) {
-				throw new ConverterException("Dexing error", e);
-			}
-			if (manifest != null) {
-				manifest.merge(newDesc);
-				newDesc = manifest;
-			}
-			File resJar = new File(tmpDir, Config.MIDLET_RES_FILE);
-			FileUtils.copyFileUsingChannel(srcJar, resJar);
-			String icon = newDesc.getIcon();
-			File iconFile = new File(tmpDir, Config.MIDLET_ICON_FILE);
-			if (icon != null) {
-				try {
-					ZipUtils.unzipEntry(resJar, icon, iconFile);
-				} catch (IOException e) {
-					Log.w(TAG, "Can't unzip icon: " + icon, e);
-					icon = null;
-					//noinspection ResultOfMethodCallIgnored
-					iconFile.delete();
-				}
-			}
-			newDesc.writeTo(new File(tmpDir, Config.MIDLET_MANIFEST_FILE));
-			FileUtils.deleteDirectory(targetDir);
-			if (!tmpDir.renameTo(targetDir)) {
-				throw new ConverterException("Can't move '" + tmpDir + "' to '" + targetDir + "'");
-			}
-			String name = newDesc.getName();
-			String vendor = newDesc.getVendor();
-			AppItem app = new AppItem(appDirName, name, vendor, newDesc.getVersion());
-			if (icon != null) {
-				app.setImagePathExt(Config.MIDLET_ICON_FILE);
-			}
-			if (currentApp != null) {
-				app.setId(currentApp.getId());
-				app.setTitle(currentApp.getTitle());
-				String path = currentApp.getPath();
-				if (!path.equals(appDirName)) {
-					File rms = new File(Config.getDataDir(), path);
-					if (rms.exists()) {
-						File newRms = new File(Config.getDataDir(), appDirName);
-						FileUtils.deleteDirectory(newRms);
-						rms.renameTo(newRms);
-					}
-					File config = new File(Config.getConfigsDir(), path);
-					if (config.exists()) {
-						File newConfig = new File(Config.getConfigsDir(), appDirName);
-						FileUtils.deleteDirectory(newConfig);
-						config.renameTo(newConfig);
-					}
-					File appDir = new File(Config.getAppDir(), path);
-					FileUtils.deleteDirectory(appDir);
-				}
-			}
-			currentApp = app;
-			appRepository.insert(app);
-			clearCache();
-			deleteTemp();
-
-		}catch (Exception e){
-			e.printStackTrace();
-		}
 	}
 
 	Single<Integer> updateInfo(Uri jarUri) {
@@ -373,7 +284,7 @@ public class AppInstaller {
 	}
 
 	/** Install app */
-	public void install(SingleEmitter<Integer> emitter) throws ConverterException, IOException {
+	void install(SingleEmitter<Integer> emitter) throws ConverterException, IOException {
 		if (!cacheDir.exists() && !cacheDir.mkdirs()) {
 			throw new ConverterException("Can't create cache dir");
 		}
@@ -570,7 +481,7 @@ public class AppInstaller {
 		throw new ConverterException("Can't download jar", exception);
 	}
 
-	public void deleteTemp() {
+	void deleteTemp() {
 		if (tmpDir != null) {
 			FileUtils.deleteDirectory(tmpDir);
 		}
@@ -580,15 +491,107 @@ public class AppInstaller {
 		return srcJar == null ? null : srcJar.getAbsolutePath();
 	}
 
-	public void clearCache() {
+	void clearCache() {
 		FileUtils.deleteDirectory(cacheDir);
 	}
 
-	public String getIconPath() {
+	String getIconPath() {
 		return targetDir.getAbsolutePath() + Config.MIDLET_ICON_FILE;
 	}
 
 	public AppItem getExistsApp() {
 		return currentApp;
+	}
+
+	public void installJar(){
+		try {
+			srcJar = new File(localJarFilePath);
+			newDesc = loadManifest(srcJar);
+
+			if (!cacheDir.exists() && !cacheDir.mkdirs()) {
+				throw new ConverterException("Can't create cache dir");
+			}
+			targetDir = new File(Config.getAppDir(), newDesc.getName());
+			tmpDir = new File(targetDir.getParent(), ".tmp");
+			if(!tmpDir.exists()){
+				tmpDir.mkdirs();
+			}
+			if (!tmpDir.isDirectory() && !tmpDir.mkdirs())
+				throw new ConverterException("Can't create directory: '" + targetDir + "'");
+			if (srcJar == null) {
+				srcJar = new File(cacheDir, "tmp.jar");
+				downloadJar();
+				manifest = loadManifest(srcJar);
+				if (!manifest.equals(newDesc)) {
+					System.out.println("manifest error ....");
+					return;
+				}
+			}
+			try {
+				Main.main(new String[]{"--no-optimize", "--core-library",
+						"--output=" + tmpDir + Config.MIDLET_DEX_FILE,
+						srcJar.getAbsolutePath()});
+			} catch (Throwable e) {
+				throw new ConverterException("Dexing error", e);
+			}
+			if (manifest != null) {
+				manifest.merge(newDesc);
+				newDesc = manifest;
+			}
+			File resJar = new File(tmpDir, Config.MIDLET_RES_FILE);
+			FileUtils.copyFileUsingChannel(srcJar, resJar);
+			String icon = newDesc.getIcon();
+			File iconFile = new File(tmpDir, Config.MIDLET_ICON_FILE);
+			if (icon != null) {
+				try {
+					ZipUtils.unzipEntry(resJar, icon, iconFile);
+				} catch (IOException e) {
+					Log.w(TAG, "Can't unzip icon: " + icon, e);
+					icon = null;
+					//noinspection ResultOfMethodCallIgnored
+					iconFile.delete();
+				}
+			}
+			newDesc.writeTo(new File(tmpDir, Config.MIDLET_MANIFEST_FILE));
+			FileUtils.deleteDirectory(targetDir);
+			if (!tmpDir.renameTo(targetDir)) {
+				throw new ConverterException("Can't move '" + tmpDir + "' to '" + targetDir + "'");
+			}
+			String name = newDesc.getName();
+			String vendor = newDesc.getVendor();
+			AppItem app = new AppItem(appDirName, name, vendor, newDesc.getVersion());
+			if (icon != null) {
+				app.setImagePathExt(Config.MIDLET_ICON_FILE);
+			}
+			if (currentApp != null) {
+				app.setId(currentApp.getId());
+				app.setTitle(currentApp.getTitle());
+				String path = currentApp.getPath();
+				if (!path.equals(appDirName)) {
+					File rms = new File(Config.getDataDir(), path);
+					if (rms.exists()) {
+						File newRms = new File(Config.getDataDir(), appDirName);
+						FileUtils.deleteDirectory(newRms);
+						rms.renameTo(newRms);
+					}
+					File config = new File(Config.getConfigsDir(), path);
+					if (config.exists()) {
+						File newConfig = new File(Config.getConfigsDir(), appDirName);
+						FileUtils.deleteDirectory(newConfig);
+						config.renameTo(newConfig);
+					}
+					File appDir = new File(Config.getAppDir(), path);
+					FileUtils.deleteDirectory(appDir);
+				}
+			}
+			currentApp = app;
+			appRepository.insert(app);
+			clearCache();
+			deleteTemp();
+
+		}catch (Exception e){
+			e.printStackTrace();
+		}
+
 	}
 }

@@ -42,6 +42,7 @@ import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
 import android.os.Message;
+import android.os.Process;
 import android.util.Log;
 import android.view.ContextMenu;
 import android.view.LayoutInflater;
@@ -108,38 +109,41 @@ public class AppsListFragment extends ListFragment {
 	private SharedPreferences preferences;
 	private AppRepository appRepository;
 	private Disposable searchViewDisposable;
+	private Context context;
+	private Activity activity;
+
+	FragmentAppsListBinding binding;
+
+	private final ActivityResultLauncher<String> openFileLauncher = registerForActivityResult(
+			FileUtils.getFilePicker(),
+			this::onPickFileResult);
+	private final ActivityResultLauncher<String> openDirLauncher = registerForActivityResult(
+			FileUtils.getDirPicker(),
+			this::onPickDirResult);
 
 
-    FragmentAppsListBinding binding;
+	public static AppsListFragment newInstance(Uri data) {
+		AppsListFragment fragment = new AppsListFragment();
+		Bundle args = new Bundle();
+		args.putParcelable(KEY_APP_URI, data);
+		fragment.setArguments(args);
+		return fragment;
+	}
 
-    private final ActivityResultLauncher<String> openFileLauncher = registerForActivityResult(
-            FileUtils.getFilePicker(),
-            this::onPickFileResult);
-
-    private final ActivityResultLauncher<String> openDirLauncher = registerForActivityResult(
-            FileUtils.getDirPicker(),
-            this::onPickDirResult);
-
-    public static AppsListFragment newInstance(Uri data) {
-        AppsListFragment fragment = new AppsListFragment();
-        Bundle args = new Bundle();
-        args.putParcelable(KEY_APP_URI, data);
-        fragment.setArguments(args);
-        return fragment;
-    }
-
-    @Override
-    public void onCreate(@Nullable Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        Bundle args = requireArguments();
-        appUri = args.getParcelable(KEY_APP_URI);
-        args.remove(KEY_APP_URI);
-        preferences = requireActivity().getSharedPreferences(PREF_STR,Context.MODE_WORLD_WRITEABLE);
-        AppListModel appListModel = new ViewModelProvider(requireActivity()).get(AppListModel.class);
-        appRepository = appListModel.getAppRepository();
-        appRepository.observeErrors(this, this::alertDbError);
-        appRepository.observeApps(this, this::onDbUpdated);
-    }
+	@Override
+	public void onCreate(@Nullable Bundle savedInstanceState) {
+		super.onCreate(savedInstanceState);
+		context = getContext();
+		activity = getActivity();
+		Bundle args = requireArguments();
+		appUri = args.getParcelable(KEY_APP_URI);
+		args.remove(KEY_APP_URI);
+		preferences = requireActivity().getSharedPreferences(PREF_STR,Context.MODE_WORLD_WRITEABLE);
+		AppListModel appListModel = new ViewModelProvider(requireActivity()).get(AppListModel.class);
+		appRepository = appListModel.getAppRepository();
+		appRepository.observeErrors(this, this::alertDbError);
+		appRepository.observeApps(this, this::onDbUpdated);
+	}
 
 	@Override
 	public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
@@ -147,45 +151,45 @@ public class AppsListFragment extends ListFragment {
 		return binding.getRoot();
 	}
 
-    @Override
-    public void onViewCreated(@NonNull View view, Bundle savedInstanceState) {
-        super.onViewCreated(view, savedInstanceState);
-        registerForContextMenu(getListView());
-        setHasOptionsMenu(true);
-        setListAdapter(adapter);
-        binding.floatingActionButton.setOnClickListener(v -> {
-            String path = preferences.getString(PREF_LAST_PATH, null);
-            if (path == null) {
-                File dir = Environment.getExternalStorageDirectory();
-                if (dir.canRead()) {
-                    path = dir.getAbsolutePath();
-                }
-            }
-            try {
-                openFileLauncher.launch(path);
-            } catch (ActivityNotFoundException e) {
-                Toast.makeText(getContext(), R.string.error_no_picker, Toast.LENGTH_SHORT).show();
-                e.printStackTrace();
-            }
-        });
+	@Override
+	public void onViewCreated(@NonNull View view, Bundle savedInstanceState) {
+		super.onViewCreated(view, savedInstanceState);
+		registerForContextMenu(getListView());
+		setHasOptionsMenu(true);
+		setListAdapter(adapter);
+		binding.floatingActionButton.setOnClickListener(v -> {
+			String path = preferences.getString(PREF_LAST_PATH, null);
+			if (path == null) {
+				File dir = Environment.getExternalStorageDirectory();
+				if (dir.canRead()) {
+					path = dir.getAbsolutePath();
+				}
+			}
+			try {
+				openFileLauncher.launch(path);
+			} catch (ActivityNotFoundException e) {
+				Toast.makeText(getContext(), R.string.error_no_picker, Toast.LENGTH_SHORT).show();
+				e.printStackTrace();
+			}
+		});
 
-        binding.floatingActionButton2.setOnClickListener(v -> {
-            String path = preferences.getString(PREF_LAST_PATH, null);
-            if (path == null) {
-                File dir = Environment.getExternalStorageDirectory();
-                if (dir.canRead()) {
-                    path = dir.getAbsolutePath();
-                }
+		binding.floatingActionButton2.setOnClickListener(v -> {
+			String path = preferences.getString(PREF_LAST_PATH, null);
+			if (path == null) {
+				File dir = Environment.getExternalStorageDirectory();
+				if (dir.canRead()) {
+					path = dir.getAbsolutePath();
+				}
 
-            }
-            try {
-                openDirLauncher.launch(path);
-            } catch (ActivityNotFoundException e) {
-                Toast.makeText(getContext(), R.string.error_no_picker, Toast.LENGTH_SHORT).show();
-                e.printStackTrace();
-            }
-        });
-    }
+			}
+			try {
+				openDirLauncher.launch(path);
+			} catch (ActivityNotFoundException e) {
+				Toast.makeText(getContext(), R.string.error_no_picker, Toast.LENGTH_SHORT).show();
+				e.printStackTrace();
+			}
+		});
+	}
 
 	private void alertDbError(Throwable throwable) {
 		Activity activity = getActivity();
@@ -211,155 +215,153 @@ public class AppsListFragment extends ListFragment {
 		InstallerDialog.newInstance(uri).show(getParentFragmentManager(), "installer");
 	}
 
-    private void onPickDirResult(Uri uri) {
-        if (uri == null) {
-            return;
-        }
+	private void onPickDirResult(Uri uri) {
+		if (uri == null) {
+			return;
+		}
+		String filePath = FileUtils.fileUriToStr(uri);
+		File dirPath = new File(filePath);
+		if (dirPath.isDirectory()) {
+			List<File> files = new ArrayList<>();
+			FileUtils.getAllFileByEndName(filePath, ".jar", files);
+			Context context = getContext();
+			int size = files.size();
 
-		String storage = Environment.getExternalStorageDirectory().toString();
-        String filePath = FileUtils.fileUriToStr(uri);
-        File dirPath = new File(filePath);
-        if (dirPath.isDirectory()) {
-            List<File> files = new ArrayList<>();
-            FileUtils.getAllFileByEndName(filePath, ".jar", files);
-            Context context = getContext();
-            int size = files.size();
-            AlertDialog.Builder builder = new AlertDialog.Builder(context);
-            builder.setTitle(R.string.converting_wait);
-            View vvv = LayoutInflater.from(context).inflate(R.layout.dialog_installer, null);
-            ProgressBar mProgressBar = (ProgressBar) vvv.findViewById(R.id.installation_progress);
-            TextView dpbtv1 = vvv.findViewById(R.id.installation_status);
-            builder.setView(vvv);
-            AlertDialog alertDialog = builder.create();
-            alertDialog.setCanceledOnTouchOutside(false);
-            alertDialog.setCancelable(false);
-            alertDialog.show();
-            preventDismissDialog(alertDialog);
-            Handler handler = new Handler() {
-                @Override
-                public void handleMessage(@NonNull Message msg) {
-                    if (msg.what == 0) {
-                        // 设置进度条
-                        //set progress bar
-                        mProgressBar.setProgress((int) msg.obj);
-                    }
+			AlertDialog.Builder builder = new AlertDialog.Builder(context);
+			builder.setTitle(R.string.converting_wait);
+			View vvv = LayoutInflater.from(context).inflate(R.layout.dialog_installer, null);
+			ProgressBar mProgressBar = (ProgressBar) vvv.findViewById(R.id.installation_progress);
+			TextView dpbtv1 = vvv.findViewById(R.id.installation_status);
+			builder.setView(vvv);
+			AlertDialog alertDialog = builder.create();
+			alertDialog.setCanceledOnTouchOutside(false);
+			alertDialog.setCancelable(false);
+			alertDialog.show();
+			preventDismissDialog(alertDialog);
+			Handler handler = new Handler() {
+				@Override
+				public void handleMessage(@NonNull Message msg) {
+					if (msg.what == 0) {
+						// 设置进度条
+						//set progress bar
+						mProgressBar.setProgress((int) msg.obj);
+					}
 
-                    if (msg.what == 1) {
-                        permittedDismissDialog(alertDialog);
-						AlertDialog.Builder ab2 = new AlertDialog.Builder(context);
-						ab2.setTitle("tips");
-						ab2.setMessage(R.string.install_done);
-						ab2.setNegativeButton(R.string.exit, new DialogInterface.OnClickListener() {
+					if (msg.what == 1) {
+						permittedDismissDialog(alertDialog);
+						AlertDialog.Builder ab = new AlertDialog.Builder(context);
+						ab.setTitle("Tips");
+						ab.setMessage(R.string.install_done);
+						ab.setNegativeButton(R.string.exit, new DialogInterface.OnClickListener() {
 							@Override
 							public void onClick(DialogInterface dialogInterface, int i) {
 								dialogInterface.cancel();
-								android.os.Process.killProcess(android.os.Process.myPid());
+								activity.finish();
+								android.os.Process.killProcess(Process.myPid());
 							}
 						});
 
-						AlertDialog alertDialog2 = ab2.create();
-						alertDialog2.setCanceledOnTouchOutside(false);
-						alertDialog2.setCancelable(false);
-						alertDialog2.show();
+						AlertDialog alertDialog2 = ab.create();
 						preventDismissDialog(alertDialog2);
-                    }
+						alertDialog2.show();
+						TextView tv = alertDialog2.getWindow().getDecorView().findViewById(android.R.id.message);
+						tv.setTextIsSelectable(true);
+					}
 
-                    if (msg.what == 2) {
-                        dpbtv1.setText(String.format("%d/%d", (int) msg.obj, size));
-                    }
+					if (msg.what == 2) {
+						dpbtv1.setText(String.format("%d/%d", (int) msg.obj, size));
+					}
 
 
-                }
-            };
-            new Thread(new Runnable() {
-                @Override
-                public void run() {
-                    for (int i = 1; i <= size; i++) {
-                        String filePathJar = files.get(i - 1).toString();
-                        sendHandlerMsg(handler, 0, (int) (((float) i / size) * 100));
-                        sendHandlerMsg(handler, 2, i);
-                        preferences.edit()
-                                .putString(Constants.PREF_LAST_PATH, storage)
-                                .apply();
-                        AppInstaller installer = new AppInstaller(filePathJar, requireActivity().getApplication(), appRepository);
-                        installer.installJar();
+				}
+			};
+			new Thread(new Runnable() {
+				@Override
+				public void run() {
+					//需要简单修复一下bug跟同步一下源码
+					for (int i = 1; i <= size; i++) {
+						String filePathJar = files.get(i - 1).toString();
+						sendHandlerMsg(handler, 0, (int) (((float) i / size) * 100));
+						sendHandlerMsg(handler, 2, i);
+						preferences.edit()
+								.putString(Constants.PREF_LAST_PATH, filePathJar)
+								.apply();
+						AppInstaller installer = new AppInstaller(filePathJar, requireActivity().getApplication(), appRepository);
+						installer.installJar();
+					}
+					handler.sendEmptyMessage(1);
+				}
+			}).start();
 
-                    }
-                    handler.sendEmptyMessage(1);
-                }
-            }).start();
+		} else {
+			System.err.println("dirpath not isDirectory ::: " + dirPath);
+		}
+	}
+	/**
+	 * 通过反射 阻止关闭对话框
+	 * set stop close dialog
+	 */
+	public void preventDismissDialog(AlertDialog ddd) {
+		try {
+			Field field = ddd.getClass().getSuperclass().getDeclaredField("mShowing");
+			field.setAccessible(true);
+			//设置mShowing值，欺骗android系统
+			field.set(ddd, false);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
 
-        } else {
-            System.err.println("dirpath not isDirectory ::: " + dirPath);
-        }
-    }
+	/**
+	 * 关闭对话框
+	 * set force close dialog
+	 */
+	public void permittedDismissDialog(AlertDialog ddd) {
+		try {
+			Field field = ddd.getClass().getSuperclass().getDeclaredField("mShowing");
+			field.setAccessible(true);
+			field.set(ddd, true);
+		} catch (Exception e) {
+		}
+		ddd.dismiss();
+	}
 
-    /**
-     * 通过反射 阻止关闭对话框
-     * set stop close dialog
-     */
-    public void preventDismissDialog(AlertDialog ddd) {
-        try {
-            Field field = ddd.getClass().getSuperclass().getDeclaredField("mShowing");
-            field.setAccessible(true);
-            //设置mShowing值，欺骗android系统
-            field.set(ddd, false);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
-    /**
-     * 关闭对话框
-     * set force close dialog
-     */
-    public void permittedDismissDialog(AlertDialog ddd) {
-        try {
-            Field field = ddd.getClass().getSuperclass().getDeclaredField("mShowing");
-            field.setAccessible(true);
-            field.set(ddd, true);
-        } catch (Exception e) {
-        }
-        ddd.dismiss();
-    }
-
-    public void sendHandlerMsg(Handler handler, int n, Object obj) {
-        Message message = new Message();
-        message.what = n;
-        message.obj = obj;
-        handler.sendMessage(message);
-    }
-
-    private void alertRename(final int id) {
-        AppItem item = adapter.getItem(id);
-        FragmentActivity activity = requireActivity();
-        EditText editText = new EditText(activity);
-        editText.setText(item.getTitle());
-        float density = getResources().getDisplayMetrics().density;
-        LinearLayout linearLayout = new LinearLayout(activity);
-        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,
-                ViewGroup.LayoutParams.WRAP_CONTENT);
-        int margin = (int) (density * 20);
-        params.setMargins(margin, 0, margin, 0);
-        linearLayout.addView(editText, params);
-        int paddingVertical = (int) (density * 16);
-        int paddingHorizontal = (int) (density * 8);
-        editText.setPadding(paddingHorizontal, paddingVertical, paddingHorizontal, paddingVertical);
-        AlertDialog.Builder builder = new AlertDialog.Builder(activity)
-                .setTitle(R.string.action_context_rename)
-                .setView(linearLayout)
-                .setPositiveButton(android.R.string.ok, (dialogInterface, i) -> {
-                    String title = editText.getText().toString().trim();
-                    if (title.equals("")) {
-                        Toast.makeText(getActivity(), R.string.error, Toast.LENGTH_SHORT).show();
-                    } else {
-                        item.setTitle(title);
-                        appRepository.update(item);
-                    }
-                })
-                .setNegativeButton(android.R.string.cancel, null);
-        builder.show();
-    }
+	public void sendHandlerMsg(Handler handler, int n, Object obj) {
+		Message message = new Message();
+		message.what = n;
+		message.obj = obj;
+		handler.sendMessage(message);
+	}
+	private void alertRename(final int id) {
+		AppItem item = adapter.getItem(id);
+		FragmentActivity activity = requireActivity();
+		EditText editText = new EditText(activity);
+		editText.setText(item.getTitle());
+		float density = getResources().getDisplayMetrics().density;
+		LinearLayout linearLayout = new LinearLayout(activity);
+		LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,
+				ViewGroup.LayoutParams.WRAP_CONTENT);
+		int margin = (int) (density * 20);
+		params.setMargins(margin, 0, margin, 0);
+		linearLayout.addView(editText, params);
+		int paddingVertical = (int) (density * 16);
+		int paddingHorizontal = (int) (density * 8);
+		editText.setPadding(paddingHorizontal, paddingVertical, paddingHorizontal, paddingVertical);
+		AlertDialog.Builder builder = new AlertDialog.Builder(activity)
+				.setTitle(R.string.action_context_rename)
+				.setView(linearLayout)
+				.setPositiveButton(android.R.string.ok, (dialogInterface, i) -> {
+					String title = editText.getText().toString().trim();
+					if (title.equals("")) {
+						Toast.makeText(getActivity(), R.string.error, Toast.LENGTH_SHORT).show();
+					} else {
+						item.setTitle(title);
+						appRepository.update(item);
+					}
+				})
+				.setNegativeButton(android.R.string.cancel, null);
+		builder.show();
+	}
 
 	private void alertDelete(AppItem item) {
 		AlertDialog.Builder builder = new AlertDialog.Builder(requireActivity())

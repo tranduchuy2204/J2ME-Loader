@@ -68,11 +68,10 @@ public class MainActivity extends BaseActivity {
 			new PickDirResultContract(),
 			this::onPickDirResult);
 
-	public static Context context;
-	public static Activity activity;
-
 	private SharedPreferences preferences;
 	private AppListModel appListModel;
+	private Context context;
+	private Activity activity;
 
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
@@ -80,12 +79,11 @@ public class MainActivity extends BaseActivity {
 		setContentView(R.layout.activity_main);
 		context = this;
 		activity = this;
-
 		if (FileUtils.isExternalStorageLegacy()) {
 			permissionsLauncher.launch(STORAGE_PERMISSIONS);
 		}
 		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-			this.requestPermissions(STORAGE_PERMISSIONS,0);
+			activity.requestPermissions(STORAGE_PERMISSIONS,0);
 		}
 		//request storage permission  Android 4.x~14
 		// 通过api判断手机当前版本号
@@ -106,8 +104,6 @@ public class MainActivity extends BaseActivity {
 				context.startActivity(intent);
 			}
 		}
-
-
 		appListModel = new ViewModelProvider(this).get(AppListModel.class);
 		if (savedInstanceState == null) {
 			Intent intent = getIntent();
@@ -119,7 +115,7 @@ public class MainActivity extends BaseActivity {
 			getSupportFragmentManager().beginTransaction()
 					.replace(R.id.container, fragment).commit();
 		}
-		preferences = context.getSharedPreferences(PREF_STR,MODE_WORLD_WRITEABLE);
+		preferences = context.getSharedPreferences(PREF_STR,Context.MODE_WORLD_WRITEABLE);
 		if (!preferences.contains(PREF_TOOLBAR)) {
 			boolean enable = !ViewConfiguration.get(this).hasPermanentMenuKey();
 			preferences.edit().putBoolean(PREF_TOOLBAR, enable).apply();
@@ -131,12 +127,10 @@ public class MainActivity extends BaseActivity {
 		}
 		setVolumeControlStream(AudioManager.STREAM_MUSIC);
 	}
-
 	public int checkSelfPermission(Context context , String permission){
 		ContextWrapper c = new ContextWrapper(context);
 		return c.checkPermission(permission, Process.myUid(),Process.myUid());
 	}
-
 	private void checkAndCreateDirs() {
 		String emulatorDir = Config.getEmulatorDir();
 		File dir = new File(emulatorDir);
